@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Ryan Currie</title>
+    <description>Tech Enthusiast</description>
+    <link>http://ryancurrie.me/</link>
+    <atom:link href="http://ryancurrie.me/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Tue, 08 Mar 2016 17:11:06 -0800</pubDate>
+    <lastBuildDate>Tue, 08 Mar 2016 17:11:06 -0800</lastBuildDate>
+    <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>A Clean AngularJS Project: Part 2 - Services</title>
+        <description>&lt;p&gt;To continue the discussion from &lt;a href=&quot;/2016/03/a-clean-angularjs-project-part-1-controllers/&quot;&gt;Part 1&lt;/a&gt; on starting with a clean &lt;a href=&quot;https://angularjs.org/&quot;&gt;AngularJS&lt;/a&gt; project, we wanted to discuss the style we chose for services.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;A note on the difference between a &lt;code class=&quot;highlighter-rouge&quot;&gt;service&lt;/code&gt; and a &lt;code class=&quot;highlighter-rouge&quot;&gt;factory&lt;/code&gt;. A &lt;code class=&quot;highlighter-rouge&quot;&gt;service&lt;/code&gt; is instantiated with a &lt;code class=&quot;highlighter-rouge&quot;&gt;new&lt;/code&gt; keyword, and uses the &lt;code class=&quot;highlighter-rouge&quot;&gt;this&lt;/code&gt; keyword for public methods and variables. They are similar to &lt;code class=&quot;highlighter-rouge&quot;&gt;factory&lt;/code&gt;, so similar that it is recommended to use &lt;code class=&quot;highlighter-rouge&quot;&gt;factory&lt;/code&gt; for consistency.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&quot;part-2-services&quot;&gt;Part 2: Services&lt;/h1&gt;
+
+&lt;p&gt;We wanted our services to be clean, useful, and provide the main consumer of our data. Since we mainly use RESTful Web Services, we focus most of our code on Services that will use [ngResource&lt;a href=&quot;https://docs.angularjs.org/api/ngResource&quot;&gt;angular-ngresource&lt;/a&gt; and make use of $resource.&lt;/p&gt;
+
+&lt;p&gt;First, our code style, again adapted from the wonderful &lt;a href=&quot;https://github.com/johnpapa/angular-styleguide/blob/master/a1/README.md&quot;&gt;Angular 1 Styleguide&lt;/a&gt; by John Papa.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nx&quot;&gt;angular&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;module&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;app&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;factory&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;dataService&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;dataService&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// inject dependencies on this line&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;dataService&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;$inject&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;$log&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+
+&lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;dataService&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;$log&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;someValue&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;service&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// these methods are implemented below&lt;/span&gt;
+        &lt;span class=&quot;na&quot;&gt;save&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;save&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;na&quot;&gt;validate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;validate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// additional value from above&lt;/span&gt;
+        &lt;span class=&quot;na&quot;&gt;someValue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;someValue&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;service&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;save&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// implement save functionality down here.&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+
+    &lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;validate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// implement validate functionality down here.&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;using-resource-for-easy-restful-services&quot;&gt;Using $resource for easy RESTful services&lt;/h1&gt;
+
+&lt;p&gt;To make using $resource easy, we usually wrap our services so they return $resource objects. This gives us access to the wonderful &lt;code class=&quot;highlighter-rouge&quot;&gt;$resource.$get()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;$resource.$query()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;$resource.$save()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;$resource.$delete()&lt;/code&gt; functions inside our Controllers.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nx&quot;&gt;angular&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;module&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;app&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;factory&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;dataService&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;dataService&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// inject dependencies on this line&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;dataService&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;$inject&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;$resource&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+
+&lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;dataService&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;$log&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;service&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;$resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;/api/entity/:id&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;@_id&#39;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;na&quot;&gt;update&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;na&quot;&gt;method&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;PUT&#39;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// this method issues a PUT request&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;service&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;Here we have defined an additional &lt;code class=&quot;highlighter-rouge&quot;&gt;$update()&lt;/code&gt; member we can call on our items for a PUT operation. We decided are okay with being able to save an object from a service outside of the service, as long as the business logic resides inside the service.&lt;/p&gt;
+
+</description>
+        <pubDate>Mon, 07 Mar 2016 08:06:31 -0800</pubDate>
+        <link>http://ryancurrie.me/2016/03/a-clean-angularjs-project-part-2-services/</link>
+        <guid isPermaLink="true">http://ryancurrie.me/2016/03/a-clean-angularjs-project-part-2-services/</guid>
+        
+        <category>angularjs</category>
+        
+        
+        <category>angularjs</category>
+        
+      </item>
+    
+      <item>
+        <title>A Clean AngularJS Project: Part 1 - Controllers</title>
+        <description>&lt;p&gt;When starting on a new &lt;a href=&quot;https://angularjs.org&quot;&gt;AngularJS&lt;/a&gt; project, it is important early on to choose how you want to organize yourself before your project grows out of control.&lt;/p&gt;
+
+&lt;p&gt;Just recently, while on a new work project, our team ran into this issue in a big way. Being a team that was new to &lt;a href=&quot;https://angularjs.org&quot;&gt;AngularJS&lt;/a&gt;, we ran with it head first and dove in. After about 3 months we quickly found ourselves running into issues with module dependencies being all over the place, poorly structured folders, badly written javascript, and generally a large confusing “ball of mud.”&lt;/p&gt;
+
+&lt;p&gt;So, we stepped back, and reviewed the situation. I wanted to share what we discovered with a greater audience as we found it helped us greatly with our project and as a team.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;part-1-controllers&quot;&gt;Part 1: Controllers&lt;/h1&gt;
+
+&lt;p&gt;We quickly identified that we were not all coding in a similar fashion. Being a .NET team, we usually all code C# in a similar fashion naturally, but we never stopped and asked ourselves about Javascript and how we should code it.&lt;/p&gt;
+
+&lt;p&gt;So we took a pointer from the wonderfully opinionated &lt;a href=&quot;https://github.com/johnpapa/angular-styleguide/blob/master/a1/README.md&quot;&gt;Angular 1 Style Guide&lt;/a&gt; by John Papa.&lt;/p&gt;
+
+&lt;p&gt;For Controllers, we chose style a controller like the following:&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nx&quot;&gt;angular&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;module&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;app&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;controller&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;DashboardController&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;DashboardController&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// inject needed dependencies and services&lt;/span&gt;
+&lt;span class=&quot;nx&quot;&gt;DashboardController&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;$inject&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;$log&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;];&lt;/span&gt;
+
+&lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;DashboardController&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;$log&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;   
+  &lt;span class=&quot;kd&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;vm&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;c1&quot;&gt;// bindable members that can be bound at top.   &lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;vm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;complexAction&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;complexAction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;   
+  &lt;span class=&quot;nx&quot;&gt;vm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;simpleAction&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;     
+    &lt;span class=&quot;c1&quot;&gt;// implement here if only one line of code.   &lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;   
+  &lt;span class=&quot;nx&quot;&gt;vm&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;list&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[];&lt;/span&gt;
+
+  &lt;span class=&quot;nx&quot;&gt;constructor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+
+  &lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;constructor&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// any init implementation can go in here.&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;complexAction&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;     
+    &lt;span class=&quot;c1&quot;&gt;// implement down here if     &lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// it is more then one line.   &lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;We found that by doing this, it allowed us greater code readability, cleaner code, and generally kept things organized.&lt;/p&gt;
+
+&lt;p&gt;We also remember the following about Controllers when we use them:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Always use the &lt;code class=&quot;highlighter-rouge&quot;&gt;controllerAs&lt;/code&gt; syntax when using a Controller.&lt;/li&gt;
+  &lt;li&gt;When possible, defer logic to a factory or service.&lt;/li&gt;
+&lt;/ul&gt;
+
+</description>
+        <pubDate>Sun, 06 Mar 2016 10:38:04 -0800</pubDate>
+        <link>http://ryancurrie.me/2016/03/a-clean-angularjs-project-part-1-controllers/</link>
+        <guid isPermaLink="true">http://ryancurrie.me/2016/03/a-clean-angularjs-project-part-1-controllers/</guid>
+        
+        <category>angularjs</category>
+        
+        
+        <category>angularjs</category>
+        
+      </item>
+    
+  </channel>
+</rss>
